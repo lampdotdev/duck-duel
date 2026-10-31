@@ -20,6 +20,8 @@ On the Mac: WASD paddles, IJKL aims, Space squirts, F dashes and P pauses.
 
 ## Open it in Lamp
 
+Needs Lamp 0.30 or later.
+
 [Lamp](https://lamp.dev) is a Mac app that builds apps from a description and changes them as you ask. [Open Duck Duel in Lamp](https://lamp.dev/?repo=https://github.com/lampdotdev/duck-duel&from=readme) for a copy of your own, to play and to change. Or, in Lamp, choose File → Open from GitHub… and paste `https://github.com/lampdotdev/duck-duel`.
 
 Lamp builds the game on your Mac when you open it, so this repository holds only the game's own files.
