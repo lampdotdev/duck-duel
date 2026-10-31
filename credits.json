@@ -1,0 +1,20 @@
+{
+  "remixOf" : [
+    {
+      "commit" : "ced46aeb03d1233b217c091f8739c20f66e6b85e",
+      "name" : "Duck Duel",
+      "wish" : "6C135B6B-4512-478A-A6DF-1745BED65792"
+    }
+  ],
+  "upstream" : [
+    {
+      "adapted" : true,
+      "author" : "ScottieFox",
+      "commit" : "d87351bff19831aa9d11c0679605fad6797b133f",
+      "license" : "MIT",
+      "licenseFile" : "Licenses/ScottieFox/caustic-volume/LICENSE",
+      "name" : "caustic-volume",
+      "url" : "https://github.com/ScottieFox/caustic-volume"
+    }
+  ]
+}

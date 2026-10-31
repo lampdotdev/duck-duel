@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Duck Duel controller</title>
+<style>
+  :root { --duck: #ffc21a; --ink: #0b3347; --tile: #f3fbfc; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #123a4a; color: #fff; touch-action: none;
+    font: 800 16px ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif; -webkit-user-select: none; user-select: none; }
+  body { height: 100dvh; background:
+    repeating-linear-gradient(0deg, transparent 0 46px, rgba(255,255,255,.05) 46px 48px),
+    repeating-linear-gradient(90deg, transparent 0 46px, rgba(255,255,255,.05) 46px 48px),
+    radial-gradient(120% 90% at 50% 0%, #1d8fb0 0%, #12546a 60%, #0b2f40 100%); }
+  /* the middle strip: who I am, how I'm doing, what a press does */
+  #mid { position: fixed; left: 50%; top: calc(10px + env(safe-area-inset-top)); transform: translateX(-50%); width: min(300px, 36vw); text-align: center; z-index: 2; pointer-events: none; }
+  #id { display: inline-flex; align-items: center; gap: 10px; padding: 6px 16px; border-radius: 16px; background: var(--tile); color: var(--ink); border: 4px solid var(--ink); box-shadow: 0 5px 0 var(--ink); font-size: 20px; max-width: 100%; }
+  #dot { width: 22px; height: 22px; border-radius: 50%; background: var(--duck); border: 3px solid var(--ink); flex: none; }
+  #name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #hp { margin-top: 10px; font-size: 22px; letter-spacing: 3px; color: #ff6b81; text-shadow: 0 2px 0 var(--ink); min-height: 28px; }
+  #say { margin-top: 6px; font-size: 17px; opacity: .92; line-height: 1.25; }
+  #state { margin-top: 4px; font-size: 13px; opacity: .6; }
+  #stick { position: fixed; left: 0; top: 0; bottom: 0; width: 50%; }
+  #base { position: absolute; width: 150px; height: 150px; margin: -75px 0 0 -75px; border-radius: 50%; border: 4px solid rgba(255,255,255,.4); background: rgba(255,255,255,.1); }
+  #knob { position: absolute; width: 70px; height: 70px; margin: -35px 0 0 -35px; border-radius: 50%; background: var(--duck); border: 4px solid var(--ink); box-shadow: 0 5px 0 var(--ink); }
+  #hint { position: absolute; left: calc(18px + env(safe-area-inset-left)); right: 18px; bottom: calc(24px + env(safe-area-inset-bottom)); top: 40%; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+  #hint div { width: 150px; height: 150px; border-radius: 50%; border: 4px dashed rgba(255,255,255,.4); display: flex; align-items: center; justify-content: center; text-align: center; font-size: 17px; opacity: .85; padding: 20px; }
+  .btn { position: fixed; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 900; letter-spacing: .03em;
+    border: 5px solid var(--ink); box-shadow: 0 8px 0 var(--ink); transition: transform .06s, box-shadow .06s; }
+  .btn.down { transform: translateY(6px); box-shadow: 0 2px 0 var(--ink); }
+  #fire { right: calc(28px + env(safe-area-inset-right)); bottom: calc(40px + env(safe-area-inset-bottom)); width: 160px; height: 160px; background: var(--duck); color: var(--ink); font-size: 26px; }
+  #dash { right: calc(206px + env(safe-area-inset-right)); bottom: calc(32px + env(safe-area-inset-bottom)); width: 96px; height: 96px; background: var(--tile); color: var(--ink); font-size: 18px; }
+  .btn.idle { opacity: .45; }
+  #pause { position: fixed; left: calc(10px + env(safe-area-inset-left)); top: calc(10px + env(safe-area-inset-top)); padding: 6px 14px; border-radius: 12px; background: rgba(243,251,252,.85); color: var(--ink); border: 3px solid var(--ink); font-size: 14px; display: none; }
+  #shade, #turn { position: fixed; inset: 0; background: rgba(8, 28, 40, .94); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; padding: 30px; font-size: 22px; z-index: 5; }
+  #shade.on { display: flex; }
+  #turn button { font: inherit; padding: 8px 20px; border-radius: 14px; border: 4px solid var(--ink); background: var(--tile); color: var(--ink); box-shadow: 0 5px 0 var(--ink); }
+  #turn .ph { width: 70px; height: 40px; border: 5px solid #fff; border-radius: 10px; animation: tilt 2.4s ease-in-out infinite; }
+  @keyframes tilt { 0%,30% { transform: rotate(90deg); } 60%,100% { transform: rotate(0); } }
+  @media (orientation: portrait) { body:not(.upright) #turn { display: flex; } body.upright #mid { width: 60vw; } body.upright #fire { width: 130px; height: 130px; } body.upright #dash { right: calc(170px + env(safe-area-inset-right)); } }
+  @media (prefers-reduced-motion: reduce) { #turn .ph { animation: none; } .btn { transition: none; } }
+</style>
+</head>
+<body>
+<div id="mid"><div id="id"><div id="dot"></div><div id="name">Duck Duel</div></div><div id="hp"></div><div id="say"></div><div id="state">connecting…</div></div>
+<div id="stick"><div id="base" style="display:none"></div><div id="knob" style="display:none"></div><div id="hint"><div>Drag here to paddle</div></div></div>
+<div id="dash" class="btn">DASH</div>
+<div id="fire" class="btn">SQUIRT</div>
+<div id="shade"><div id="shadeText"></div></div>
+<div id="turn"><div class="ph"></div><div>Turn your phone sideways to paddle and squirt.</div><button id="upr">Use upright</button></div>
+<script src="lamp-controller.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var shade = $('shade'), shadeText = $('shadeText'), stateEl = $('state'), nameEl = $('name'), sayEl = $('say'), fireEl = $('fire'), dashEl = $('dash');
+  var held = {}, id = null, lastX = 0, lastY = 0, pad = null;
+  function say(text) { shadeText.textContent = text || ''; shade.classList.toggle('on', !!text); }
+  function phase(p) {
+    var words = { title: 'You’re in! Tap SQUIRT to start the duel.', stage: 'You’re in! Tap SQUIRT to start the duel.', join: 'You’re in! Tap SQUIRT to start the duel.',
+      count: 'Get ready…', play: '', paused: 'Paused. Tap SQUIRT to resume.', ending: 'Pop!', over: 'Tap SQUIRT for a rematch.' };
+    sayEl.textContent = words[p] != null ? words[p] : '';
+    var playing = p === 'play' || p === 'count';
+    dashEl.classList.toggle('idle', !playing);
+  }
+  say('Connecting to the bath…'); phase('');
+
+  pad = LampController.connect({
+    onPlayer: function (n) { stateEl.textContent = 'Player ' + n; },
+    onMessage: function (m) {
+      if (!m) return;
+      if (m.color) document.documentElement.style.setProperty('--duck', m.color);
+      if (m.name) nameEl.textContent = m.name;
+      if (typeof m.hp === 'number') $('hp').textContent = m.hp > 0 ? '♥'.repeat(m.hp) : 'Popped!';
+      if (m.phase) phase(m.phase);
+      if (m.buzz && navigator.vibrate) navigator.vibrate(m.buzz);
+    },
+    onState: function (s) {
+      if (s === 'connected') say('');
+      else if (s === 'waiting') say('Waiting for Duck Duel to open on the Mac…');
+      else if (s === 'ended') say('The game ended. Scan the code again to rejoin.');
+      else if (s === 'full') say('The bath is full: six ducks is the most.');
+      else say('Reconnecting to the bath…');
+    }
+  });
+
+  // the stick: put a thumb down anywhere on the left half
+  var zone = $('stick'), base = $('base'), knob = $('knob'), hint = $('hint'), sx = 0, sy = 0, R = 60;
+  function move(e) {
+    if (e.pointerId !== id) return;
+    var dx = e.clientX - sx, dy = e.clientY - sy, len = Math.hypot(dx, dy), k = Math.min(1, R / Math.max(1, len));
+    dx *= k; dy *= k;
+    knob.style.left = (sx + dx) + 'px'; knob.style.top = (sy + dy) + 'px';
+    var x = Math.round(dx / R * 100) / 100, y = Math.round(-dy / R * 100) / 100;
+    if (x !== lastX || y !== lastY) { lastX = x; lastY = y; pad.axis('stick', x, y); }
+  }
+  zone.addEventListener('pointerdown', function (e) {
+    if (id !== null) return;
+    id = e.pointerId; sx = e.clientX; sy = e.clientY; zone.setPointerCapture(id);
+    base.style.left = sx + 'px'; base.style.top = sy + 'px'; base.style.display = knob.style.display = 'block'; hint.style.display = 'none';
+    move(e); tryLock();
+  });
+  zone.addEventListener('pointermove', move);
+  function end(e) {
+    if (e.pointerId !== id) return;
+    id = null; base.style.display = knob.style.display = 'none'; hint.style.display = 'flex'; lastX = lastY = 0; pad.axis('stick', 0, 0);
+  }
+  zone.addEventListener('pointerup', end); zone.addEventListener('pointercancel', end);
+
+  // the buttons: a press and its release both go to the game
+  var pids = {};
+  function press(name, down) { if (down) held[name] = true; else delete held[name]; pad.button(name, down); }
+  function button(el, name) {
+    el.addEventListener('pointerdown', function (e) { e.preventDefault(); pids[name] = e.pointerId; el.setPointerCapture(e.pointerId); el.classList.add('down'); press(name, true); tryLock(); });
+    function up(e) { if (e.pointerId !== pids[name]) return; delete pids[name]; el.classList.remove('down'); press(name, false); }
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+  }
+  button(fireEl, 'a'); button(dashEl, 'x');
+
+  // turning the phone mid-press lets everything go
+  function letGo() {
+    Object.keys(held).forEach(function (n) { press(n, false); });
+    pids = {}; fireEl.classList.remove('down'); dashEl.classList.remove('down');
+    if (id !== null) { try { zone.releasePointerCapture(id); } catch (e) {} }
+    id = null; base.style.display = knob.style.display = 'none'; hint.style.display = 'flex'; lastX = lastY = 0; pad.axis('stick', 0, 0);
+  }
+  matchMedia('(orientation: landscape)').addEventListener('change', letGo);
+  var locked = false;
+  function tryLock() { if (locked) return; locked = true; try { screen.orientation.lock('landscape').catch(function () {}); } catch (e) {} }
+  $('upr').addEventListener('click', function () { document.body.classList.add('upright'); });
+  document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+})();
+</script>
+</body>
+</html>
